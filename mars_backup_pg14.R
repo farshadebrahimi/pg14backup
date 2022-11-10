@@ -69,7 +69,7 @@
   pg_restore <- "C:\\Program Files\\pgAdmin 4\\v6\\runtime\\pg_restore.exe"
   pg_restore <- shQuote(pg_restore)
   
-  #Assemble the entire pg_dump string	
+  #Assemble the entire pg_restore string	
   pgrestorestring <- paste(pg_restore,
                         "--host",host,
                         "--port", port,
