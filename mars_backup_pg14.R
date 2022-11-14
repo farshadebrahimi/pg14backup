@@ -82,4 +82,30 @@
   results_restore <- system(pgrestorestring, intern = TRUE, wait = FALSE)
   
   
+## Pruning old back ups
+  #get a list of backup files  from the backup directory
+  backups <- list.files("C:\\Users\\Farshad.Ebrahimi\\Documents\\mars_backup")
+  backup_pathway <- paste("C:\\Users\\Farshad.Ebrahimi\\Documents\\mars_backup", backups, sep = "\\")
   
+  #extract the backup date from the backup name and reformat it as Date
+  backup_datestrings <- str_trunc(backups,8, "right", ellipsis = "")
+  Dates <- as.Date(backup_datestrings, format="%Y%m%d")
+  
+  #add the weekdays
+  backup_dates <-as.data.frame(Dates)
+  backup_dates$W_Days <- weekdays(backup_dates$Dates)
+  backup_dates$M_Days<- day(backup_dates$Dates)
+  backup_dates$Days_Ago <- as.Date(Sys.time() %>% format("%Y-%m-%d"))-backup_dates$Dates
+  
+  #get index of those rows that are older than 7 days, and are not day 30 or Friday
+  delete_lastmonth <- which(backup_dates$Days_Ago > 7 & backup_dates$Days_Ago < 30 & backup_dates$W_Days !="Friday" & backup_dates$M_Days !=30)
+  delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=30)
+  
+  #prune the delete index 
+  file.remove(backup_pathway[delete_lastmonth])
+  file.remove(backup_pathway[delete_older])
+  
+    
+    
+    
+    
