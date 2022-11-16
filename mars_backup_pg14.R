@@ -98,8 +98,8 @@
   backup_dates$Days_Ago <- as.Date(Sys.time() %>% format("%Y-%m-%d"))-backup_dates$Dates
   
   #get index of those rows that are older than 7 days, and are not day 28 or Friday
-  delete_lastmonth <- which(backup_dates$Days_Ago > 7 & backup_dates$Days_Ago < 30 & backup_dates$W_Days !="Friday" & backup_dates$M_Days !=30)
-  delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=30)
+  delete_lastmonth <- which(backup_dates$Days_Ago > 6 & backup_dates$Days_Ago < 30 & backup_dates$W_Days !="Friday" & backup_dates$M_Days !=28)
+  delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28)
   
   #prune the delete index 
   file.remove(backup_pathway[delete_lastmonth])
