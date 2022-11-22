@@ -1,0 +1,196 @@
+---
+title: "PG14_Backup"
+author: "Farshad Ebrahimi"
+date: '2022-11-22'
+output: html_document
+params:
+  database: "mars14_data" 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Dplyr stuff
+  library(magrittr)
+  library(tidyverse)
+  library(lubridate)
+
+#Database Stuff
+  library(odbc)
+
+#Other stuff
+  library(openssl)
+  options(stringsAsFactors=FALSE)
+  
+
+
+```
+
+```{r Section 1 - Back up the database to GSI Monitoring\07 Databases and Tracking Spreadsheets\18 MARS Database Back Up Files\PG 14, include = FALSE}
+## Back up the database 2.0 ----  
+#which database to backup? what format?
+  format_archive <- "c"
+  format <- paste("--format=",format_archive, sep = "")
+  database_archive <-"mars_data"
+  db <- paste("--dbname=",shQuote(database_archive), sep ="")
+  
+#specify other details: the pathway to find pg_dump, where to save archive, naming format, database server specs, and username credentials  
+  datestring <- Sys.time() %>% format("%Y%m%dT%H%M")
+  extension <- "pgdump"
+  filename <- paste0(datestring, "_", "mars_data", ".", extension)
+  filepath <- paste0("\\\\pwdoows\\oows\\Watershed Sciences\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\18 MARS Database Back Up Files\\PG 14\\", filename)
+  filepath <- shQuote(filepath)
+  pg_dump <- "C:\\Program Files\\pgAdmin 4\\v6\\runtime\\pg_dump.exe"
+  pg_dump <- shQuote(pg_dump)
+  host <- "PWDOOWSDBS"
+  host <- shQuote(host)
+  port <- "5434" 
+  port <- shQuote(port)
+  username <- "mars_admin"
+  username <- shQuote(username)
+  role <- "mars_admin"
+  role <- shQuote(role)
+  
+  
+#Assemble the entire pg_dump string	
+  pgdumpstring <- paste(pg_dump,
+                        "--file",filepath,
+                        "--host",host,
+                        "--port", port,
+                        "--username",username,
+                        "--no-password",
+                        "--role",role,
+                        format,
+                        db)
+ # run the command line using system function 
+  results_dump <- system(pgdumpstring, intern = TRUE, wait = FALSE)
+
+```
+
+
+The `r params$database` database was `r ifelse(length(results_dump) == 0, "SUCCESSFULLY", "NOT")` backed up to the W drive.
+
+`r if(length(results_dump) == 0){ paste("The file is located at", gsub("\\\\", "/", filepath)) }`
+
+```{r Section 2 - Create Test DB, include = FALSE}	
+
+## Create a database to host the test DB 3.0 ----  
+
+  #create db
+  #testdbname <- paste(database_archive,"_","archivetest_",datestring, sep = "") longnames don't get recognize by pg_restore
+  con <- odbc::dbConnect(odbc::odbc(), params$database)
+
+  error_db <- NULL
+  tryCatch({
+    
+  testdatabase <- paste("db",Sys.time() %>% format("%Y%m%d"), sep = "_")
+  query_str <- "CREATE DATABASE %s WITH TEMPLATE = template0 OWNER = mars_admingf"
+  sql_query <- paste(sprintf(query_str,testdatabase),collapse="")
+  results_createdb <- dbSendQuery(con, sql_query)
+  
+  },error=function(e){
+  error_db <<- toString(conditionMessage(e))
+  }
+  )
+  
+  dbDisconnect(con)
+
+
+```
+
+```{r Section 3 - Restoring the  backup, include = FALSE}	
+
+## Restore the archive ---- 4.0
+  
+  pg_restore <- "C:\\Program Files\\pgAdmin 4\\v6\\runtime\\pg_restore.exe"
+  pg_restore <- shQuote(pg_restore)
+  
+  #Assemble the entire pg_restore string	
+  pgrestorestring <- paste(pg_restore,
+                        "--host",host,
+                        "--port", port,
+                        "--username",username,
+                        "--no-password",
+                        "--role",role,
+                        "--jobs=5",
+                        paste("--dbname=",shQuote(testdatabase), sep=""),
+                        filepath)
+  results_restore <- system(pgrestorestring, intern = TRUE, wait = FALSE)
+  
+```
+
+The scratch database, was `r ifelse(length(results_createdb) == 0, "SUCCESSFULLY", "NOT")` created on the MARS postgres server.  
+  
+`r if(length(results_createdb) == 0){ paste("The database is named", testdatabase) }`  
+  
+The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY", "NOT")` populated by the database archive located at `r gsub("\\\\", "/", filepath)`
+
+The scratch database will be deleted automatically if restoration has been successful. 
+
+```{r Section 4 - Delete the scratch DB, include = FALSE, eval= length(results_restore)==0 & is.null(error_db)}	
+
+# DB
+  con <- odbc::dbConnect(odbc::odbc(), params$database)
+
+  
+  error_db_drop <- NULL
+  tryCatch({
+    
+  query_str <- "DROP DATABASE %s"
+  sql_query <- paste(sprintf(query_str,testdatabase),collapse="")
+  db_dropped <- dbSendQuery(con, sql_query)
+  
+  },error=function(e){
+  error_db_drop <<- toString(conditionMessage(e))
+  }
+  )
+  
+  dbDisconnect(con)
+  
+```
+
+```{r Section 5 - Prune old backups, include = FALSE,eval= length(results_restore)==0 & is.null(error_db)}	
+ 
+ ## Pruning old back ups
+  #get a list of backup files  from the backup directory
+  backups <- list.files("\\\\pwdoows\\oows\\Watershed Sciences\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\18 MARS Database Back Up Files\\PG 14")
+  backup_pathway <- paste("\\\\pwdoows\\oows\\Watershed Sciences\\GSI Monitoring\\07 Databases and Tracking Spreadsheets\\18 MARS Database Back Up Files\\PG 14", backups, sep = "\\")
+  
+  #extract the backup date from the backup name and reformat it as Date
+  backup_datestrings <- str_trunc(backups,8, "right", ellipsis = "")
+  Dates <- as.Date(backup_datestrings, format="%Y%m%d")
+  
+  #add the weekdays
+  backup_dates <-as.data.frame(Dates)
+  backup_dates$W_Days <- weekdays(backup_dates$Dates)
+  backup_dates$M_Days<- day(backup_dates$Dates)
+  backup_dates$Days_Ago <- as.Date(Sys.time() %>% format("%Y-%m-%d"))-backup_dates$Dates
+  
+  #get index of those rows that are older than 7 days, and are not day 28 or Friday
+  delete_lastmonth <- which(backup_dates$Days_Ago > 6 & backup_dates$Days_Ago < 30 & backup_dates$W_Days !="Friday" & backup_dates$M_Days !=28)
+  delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28)
+  
+  #prune the delete index 
+  results_prune <- file.remove(backup_pathway[c(delete_lastmonth,delete_older)])
+  
+```
+
+```{r Section 6 - Log Table, include = FALSE, eval= length(results_restore)==0}	
+
+# DB
+  con <- odbc::dbConnect(odbc::odbc(), params$database)
+  time_stamp <- Sys.time()
+  record_log <- data.frame(operation = c("backup","restore","prune"),
+                           time = c(time_stamp,time_stamp,time_stamp),
+                           backup_path = c(filepath,filepath,filepath),
+                           success = c(ifelse(length(results_dump) == 0,1,0),
+                                       ifelse(length(results_restore) == 0 & is.null(error_db),1,0),
+                                       ifelse(length(results_prune) != 0, 1, 0)),
+                           error = c(ifelse(length(results_dump) == 0, NA, results_dump),
+                                       ifelse(length(results_restore) == 0 & is.null(error_db),NA,paste(results_restore, error_db)),
+                                       ifelse(length(results_prune) != 0, NA,"No back up file was deleted!"))
+                           )
+  
+  
+  dbDisconnect(con)
+  
+```
