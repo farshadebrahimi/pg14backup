@@ -176,7 +176,7 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
 
 The back/restore/prune activities are summarised below and written to "admin.tbl_backup_logs":
 
-```{r Section 6 - Log Table peek}	
+```{r Section 6 - Log Table peek,echo=FALSE, results='asis'}	
     kable(record_log, caption = "Log Table")
 
 ```
