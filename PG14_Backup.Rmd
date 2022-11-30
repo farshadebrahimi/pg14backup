@@ -145,7 +145,7 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
   delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28)
   
   #prune the delete index 
-  pruned_files <- ifelse(length(c(delete_lastmonth,delete_older)) > 0,
+  removed_files <- ifelse(length(c(delete_lastmonth,delete_older)) > 0,
                           paste(backups[c(delete_lastmonth,delete_older)], collapse = ", "), NA)
   results_prune <- file.remove(backup_pathway[c(delete_lastmonth,delete_older)])
   
