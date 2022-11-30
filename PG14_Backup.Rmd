@@ -145,6 +145,7 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
   delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28)
   
   #prune the delete index 
+  removed_files <- paste(backups[c(delete_lastmonth,delete_older)],collapse = ", ")
   results_prune <- file.remove(backup_pathway[c(delete_lastmonth,delete_older)])
   
 ```
@@ -163,11 +164,14 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
              ifelse(length(results_restore) == 0 & is.null(error_db), NA, paste(results_restore, error_db)),
              ifelse(length(results_prune) != 0, NA,"No back up file was deleted!"))
   
+  pruned_files <- c(NA, NA, removed_files)
+  
   record_log <- data.frame(operation = c("backup","restore","prune"),
                            success = success,
                            time = c(time_stamp,time_stamp,time_stamp),
                            error = error,
-                           backup_path = c(filepath,filepath,filepath))
+                           backup_path = c(filepath,filepath,filepath),
+                           pruned_files)
                            
   dbWriteTable(con, SQL("admin.tbl_backup_logs"), record_log, append= TRUE, row.names = FALSE)
   dbDisconnect(con)
