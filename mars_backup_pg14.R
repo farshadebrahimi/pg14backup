@@ -102,9 +102,8 @@
   delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28)
   
   #prune the delete index 
-  file.remove(backup_pathway[delete_lastmonth])
-  file.remove(backup_pathway[delete_older])
-  
+  prune_result <- file.remove(backup_pathway[c(delete_lastmonth,delete_older)])
+
     
     
     
