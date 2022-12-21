@@ -1,6 +1,6 @@
 #This script is written to run the .rmd file for backing up PG14
 library(rmarkdown)
-
+library(dplyr)
 #The html report file name
 datestring <- Sys.time() %>% format("%Y%m%dT%H%M")
 report_name <- paste(datestring,".html", sep="")
