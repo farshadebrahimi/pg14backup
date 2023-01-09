@@ -152,6 +152,7 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
   
   #get index of those rows that are older than 7 days, and are not day 28 or Friday
   delete_lastmonth <- which(backup_dates$Days_Ago > 6 & backup_dates$Days_Ago < 30 & backup_dates$W_Days !="Friday" & backup_dates$M_Days !=28)
+  #note the backup_dates$count !=1 condition (making sure we have at least one back up per month)
   delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28 & backup_dates$count !=1)
   
   #prune the delete index 
