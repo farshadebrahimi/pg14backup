@@ -139,10 +139,20 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
   backup_dates$W_Days <- weekdays(backup_dates$Dates)
   backup_dates$M_Days<- day(backup_dates$Dates)
   backup_dates$Days_Ago <- as.Date(Sys.time() %>% format("%Y-%m-%d"))-backup_dates$Dates
+  backup_dates$M_number <- month(backup_dates$Dates)
+  
+  #Count how many back up exist in each month-this is to prevent deleting the only back up existing for a month 
+  backup_count <- backup_dates %>% 
+    group_by(M_number) %>% 
+    summarise(count = n())
+  
+  #join the count to the back up dataframe
+  backup_dates <- backup_dates %>%
+    inner_join(backup_count, by="M_number")
   
   #get index of those rows that are older than 7 days, and are not day 28 or Friday
   delete_lastmonth <- which(backup_dates$Days_Ago > 6 & backup_dates$Days_Ago < 30 & backup_dates$W_Days !="Friday" & backup_dates$M_Days !=28)
-  delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28)
+  delete_older <- which(backup_dates$Days_Ago > 29 & backup_dates$M_Days !=28 & backup_dates$count !=1)
   
   #prune the delete index 
   removed_files <- ifelse(length(c(delete_lastmonth,delete_older)) > 0,
