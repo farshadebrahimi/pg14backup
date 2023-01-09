@@ -139,7 +139,8 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
   backup_dates$W_Days <- weekdays(backup_dates$Dates)
   backup_dates$M_Days<- day(backup_dates$Dates)
   backup_dates$Days_Ago <- as.Date(Sys.time() %>% format("%Y-%m-%d"))-backup_dates$Dates
-  backup_dates$M_number <- month(backup_dates$Dates)
+  backup_dates$M_number <- backup_dates$Dates %>%
+    format("%Y-%m")
   
   #Count how many back up exist in each month-this is to prevent deleting the only back up existing for a month 
   backup_count <- backup_dates %>% 
