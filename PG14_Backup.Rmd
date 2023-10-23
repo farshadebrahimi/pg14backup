@@ -167,7 +167,7 @@ The scratch database was `r ifelse(length(results_restore) == 0, "SUCCESSFULLY",
 ```{r Section 5 - Log Table, include = FALSE}	
 
 # DB
-  con <- odbc::dbConnect(odbc::odbc(), params$database)
+  con <- dbConnect(odbc::odbc(), dsn = params$database, uid = Sys.getenv("shiny_uid"), pwd = Sys.getenv("shiny_pwd"))
   time_stamp <- Sys.time()
   success <- c(ifelse(length(results_dump) == 0,TRUE,FALSE),
                                        ifelse(length(results_restore) == 0 & is.null(error_db),TRUE,FALSE),
