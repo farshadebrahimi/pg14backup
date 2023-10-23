@@ -4,7 +4,7 @@ author: "Farshad Ebrahimi"
 date: "`r lubridate::now()`"
 output: html_document
 params:
-  database: "mars14_data" 
+  database: "mars14_datav2" 
 ---
 
 ```{r setup, include=FALSE}
@@ -43,7 +43,7 @@ knitr::opts_chunk$set(echo = TRUE)
   filepath <- shQuote(filepath)
   pg_dump <- "C:\\Program Files\\pgAdmin 4\\v6\\runtime\\pg_dump.exe"
   pg_dump <- shQuote(pg_dump)
-  host <- "PWDOOWSDBS"
+  host <- "PWDMARSDBS1"
   host <- shQuote(host)
   port <- "5434" 
   port <- shQuote(port)
@@ -77,7 +77,7 @@ The `r params$database` database was `r ifelse(length(results_dump) == 0, "SUCCE
 
   #create db
   #testdbname <- paste(database_archive,"_","archivetest_",datestring, sep = "") longnames don't get recognize by pg_restore
-  con <- odbc::dbConnect(odbc::odbc(), params$database)
+    con <- dbConnect(odbc::odbc(), dsn = params$database, uid = Sys.getenv("shiny_uid"), pwd = Sys.getenv("shiny_pwd"))
 
   error_db <- NULL
   tryCatch({
